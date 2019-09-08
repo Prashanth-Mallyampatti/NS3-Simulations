@@ -16,12 +16,10 @@ int main (int argc, char *argv[])
 	CommandLine cmd;
 	cmd.AddValue ("StuID", "Student ID:", stuid);
 	cmd.Parse (argc, argv);
-	//std::cout << "Student Id: " << stuid << std::endl;
-	
-/*	Time::SetResolution (Time::NS);
+	Time::SetResolution (Time::NS);
 	LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
 	LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
-*/
+
 	NodeContainer nodes_AC, nodes_BC, nodes_CD;
 	nodes_AC.Create (2);
 	nodes_BC.Create (2);
@@ -33,7 +31,6 @@ int main (int argc, char *argv[])
 	PointToPointHelper pointToPoint;
 	pointToPoint.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (datarate)));
 	pointToPoint.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (delay)));
-//	pointToPoint.EnablePcapAll ("Hw1");
 
 	NetDeviceContainer device_AC, device_BC, device_CD;
 	device_AC = pointToPoint.Install (nodes_AC);
@@ -53,21 +50,14 @@ int main (int argc, char *argv[])
 	Ipv4InterfaceContainer interface_BC = address_BC.Assign (device_BC);
 	Ipv4InterfaceContainer interface_CD = address_CD.Assign (device_CD);
 
-	UdpEchoServerHelper server_D(7999), server_C(7999);
+	UdpEchoServerHelper server_D (7999), server_C (7999);
 	ApplicationContainer serverApps_D = server_D.Install (nodes_CD.Get (1));
-	//ApplicationContainer serverApps_C = server_C.Install (nodes_AC.Get (1));	
 	serverApps_D.Start (Seconds (1.0));
-	//serverApps_C.Start (Seconds (1.0));
-//	serverApps_D.Stop (Seconds (3.0));
 
 	UdpEchoClientHelper client_A (interface_AC.GetAddress (1), 7999);
 	UdpEchoClientHelper client_B (interface_BC.GetAddress (1), 7999);
 	UdpEchoClientHelper client_C (interface_CD.GetAddress (1), 7999);
-/*
-	client_A.SetAttribute ("MaxPackets", UintegerValue (10));
-	client_B.SetAttribute ("MaxPackets", UintegerValue (10));
-	client_C.SetAttribute ("MaxPackets", UintegerValue (10));
-*/
+	
 	client_A.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
 	client_B.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
 	client_C.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
@@ -83,17 +73,8 @@ int main (int argc, char *argv[])
 	clientApps_B.Start (Seconds (2.0));
 	clientApps_C.Start (Seconds (2.0));
 
-//	clientApps_A.Stop (Seconds (3.0));
-//	clientApps_B.Stop (Seconds (3.0));
-//	clientApps_C.Stop (Seconds (3.0));
-
 	pointToPoint.EnablePcapAll("Hw1");
-
-	LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
-	LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
-
-	Time::SetResolution (Time::NS);
-
+	
 	Simulator::Run ();
 	Simulator::Destroy ();
 	return 0;
