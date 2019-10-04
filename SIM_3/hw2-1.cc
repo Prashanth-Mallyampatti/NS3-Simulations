@@ -42,15 +42,15 @@ int main (int argc, char *argv[])
 	int temp = 0;
 	while(temp < k)
 	{
-	for(int i = temp*me; i < (temp + 1)*me; i++)
-	{
-		for(int j = temp*ma; j < (temp + 1)*ma; j++)
+		for(int i = temp*ma; i < (temp + 1)*ma; i++)
 		{
-			e2a[ptr] = NodeContainer (cme.Get(i), cma.Get(j));
-			ptr = ptr + 1;
+			for(int j = temp*me; j < (temp + 1)*me; j++)
+			{
+				e2a[ptr] = NodeContainer (cme.Get(j), cma.Get(i));
+				ptr = ptr + 1;
+			}
 		}
-	}
-	temp = temp + 1;
+		temp = temp + 1;
 	}
 	
 	ptr = 0;
@@ -58,19 +58,20 @@ int main (int argc, char *argv[])
 	int temp1 = 0;
 	while(temp < mc && temp1 < ma)
 	{
-	for(int i = temp; i < temp + ma; i++)
-	{
-		ptr2 = temp1;
-		for(int j = 0; j < k; j++)
+		for(int i = temp; i < temp + ma; i++)
 		{
-			a2c[ptr] = NodeContainer (cma.Get(ptr2), cmc.Get(i));
-			ptr = ptr + 1;
-			ptr2 = ptr2 + ma;
+			ptr2 = temp1;
+			for(int j = 0; j < k; j++)
+			{
+				a2c[ptr] = NodeContainer (cma.Get(ptr2), cmc.Get(i));
+				ptr = ptr + 1;
+				ptr2 = ptr2 + ma;
+			}
 		}
+		temp = temp + ma;
+		temp1 = temp1 + 1;
 	}
-	temp = temp + ma;
-	temp1 = temp1 + 1;
-	}
+	
 	InternetStackHelper stack;
 	stack.Install (cmh);
 	stack.Install (cme);
@@ -97,10 +98,10 @@ int main (int argc, char *argv[])
 		subnet_h2e[i] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));	
 		address.SetBase (subnet_h2e[i], "255.255.255.0");
 		interface_h2e[i] = address.Assign (dev_h2e[i]);
-	        if(i == 0)
+        if(i == 0)
 		{
-		Ipv4Address addr = interface_h2e[i].GetAddress(0);
-		std::cout << addr << std::endl;
+			Ipv4Address addr = interface_h2e[i].GetAddress(0);
+			std::cout << addr << std::endl;
 		}
 	}
 	for(int i = 0; i < mh; i++)
@@ -110,8 +111,8 @@ int main (int argc, char *argv[])
 		interface_e2a[i] = address.Assign (dev_e2a[i]);
 		if(i == 127)
 		{
-		Ipv4Address addr = interface_e2a[i].GetAddress(0);
-		std::cout << addr << std::endl;
+			Ipv4Address addr = interface_e2a[i].GetAddress(0);
+			std::cout << addr << std::endl;
 		}
 	}	
 	for(int i = 0; i < mh; i++)
@@ -121,8 +122,8 @@ int main (int argc, char *argv[])
 		interface_a2c[i] = address.Assign (dev_a2c[i]);
 		if(i == 0)
 		{
-		Ipv4Address addr = interface_a2c[i].GetAddress(0);
-		std::cout << addr <<std::endl;
+			Ipv4Address addr = interface_a2c[i].GetAddress(0);
+			std::cout << addr <<std::endl;
 		}
 	}
 
@@ -146,4 +147,3 @@ int main (int argc, char *argv[])
 	Simulator::Destroy ();
 	return 0;
 }
-
