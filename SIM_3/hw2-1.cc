@@ -120,7 +120,7 @@ int main (int argc, char *argv[])
 		subnet_a2c[i] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));
 		address.SetBase (subnet_a2c[i], "255.255.255.0");
 		interface_a2c[i] = address.Assign (dev_a2c[i]);
-		if(i == 0)
+		if(i == 7)
 		{
 			Ipv4Address addr = interface_a2c[i].GetAddress(0);
 			std::cout << addr <<std::endl;
