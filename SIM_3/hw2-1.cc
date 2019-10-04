@@ -52,19 +52,25 @@ int main (int argc, char *argv[])
 	}
 	temp = temp + 1;
 	}
+	
 	ptr = 0;
-	for(int i = 0; i < (ma * k); i++)
+	temp = 0;
+	int temp1 = 0;
+	while(temp < mc && temp1 < ma)
 	{
-		for(int j = 0; j < ma; j++)
+	for(int i = temp; i < temp + ma; i++)
+	{
+		ptr2 = temp1;
+		for(int j = 0; j < k; j++)
 		{
-			a2c[ptr] = NodeContainer (cma.Get(i), cmc.Get(ptr2));
+			a2c[ptr] = NodeContainer (cma.Get(ptr2), cmc.Get(i));
 			ptr = ptr + 1;
-			ptr2 = ptr2 + 1;
+			ptr2 = ptr2 + ma;
 		}
-		if(ptr2 == 16)
-			ptr2 =0;
 	}
-
+	temp = temp + ma;
+	temp1 = temp1 + 1;
+	}
 	InternetStackHelper stack;
 	stack.Install (cmh);
 	stack.Install (cme);
@@ -102,7 +108,7 @@ int main (int argc, char *argv[])
 		subnet_e2a[i] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));
 		address.SetBase (subnet_e2a[i], "255.255.255.0");
 		interface_e2a[i] = address.Assign (dev_e2a[i]);
-		if(i == 0)
+		if(i == 127)
 		{
 		Ipv4Address addr = interface_e2a[i].GetAddress(0);
 		std::cout << addr << std::endl;
@@ -125,9 +131,6 @@ int main (int argc, char *argv[])
 	UdpEchoServerHelper last_host (7999);
 	ApplicationContainer server_last_host = last_host.Install (h2e[127].Get(0));
 	server_last_host.Start (Seconds (1.0));
-
-	
-	
 	
 	UdpEchoClientHelper client_first_host (interface_h2e[127].GetAddress (0), 7999);
 	client_first_host.SetAttribute ("MaxPackets", UintegerValue (3));
