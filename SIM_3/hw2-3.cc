@@ -50,7 +50,6 @@ class ThruPutAnalyzer {
 
         // Step 4c
         double CalcThruPut() {
-            NS_LOG_UNCOND("Total: " << m_totalRx << " start: " << m_startTime.GetSeconds() << " end: "<<m_lastTime.GetSeconds());
             return ((m_totalRx / (m_lastTime.GetSeconds() - m_startTime.GetSeconds())) / double(ONEMBPS));
         }
 };
@@ -70,23 +69,13 @@ int main (int argc, char *argv[])
     CommandLine cmd;
     cmd.AddValue("ECMP", "Enable ECMP", ecmp);
     cmd.AddValue("nSink", "Num. of Sinks", MakeCallback(&parse_nSink));
-    cmd.AddValue("maxBytes", "Maximum Bytes", maxBytes);
+    cmd.AddValue("MaxBytes", "Maximum Bytes", maxBytes);
     cmd.Parse (argc, argv);
 
     dataRate = 5 * ONEMBPS;
     delay = 2;
 
-    NS_LOG_UNCOND("Data rate: " << dataRate << " bps");
-    NS_LOG_UNCOND("Delay: " << delay << " ms");
-    NS_LOG_UNCOND("ECMP: " << ecmp);
-	if (ecmp) 
-		NS_LOG_UNCOND("HRE");
-
     Time::SetResolution (Time::NS);
-
-    // Step 3d
-//    LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
-//    LogComponentEnable ("OnOffApplication", LOG_LEVEL_INFO);
 
 	// Step 5
 	Config::SetDefault("ns3::Ipv4GlobalRouting::RandomEcmpRouting", BooleanValue(ecmp));
@@ -169,33 +158,18 @@ int main (int argc, char *argv[])
 		subnet_h2e[i] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));	
 		address.SetBase (subnet_h2e[i], "255.255.255.0");
 		interface_h2e[i] = address.Assign (dev_h2e[i]);
-        if(i == 0)
-		{
-			Ipv4Address addr = interface_h2e[i].GetAddress(0);
-			std::cout << addr << std::endl;
-		}
 	}
 	for(int i = 0; i < mh; i++)
 	{
 		subnet_e2a[i] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));
 		address.SetBase (subnet_e2a[i], "255.255.255.0");
 		interface_e2a[i] = address.Assign (dev_e2a[i]);
-		if(i == 127)
-		{
-			Ipv4Address addr = interface_e2a[i].GetAddress(0);
-			std::cout << addr << std::endl;
-		}
 	}	
 	for(int i = 0; i < mh; i++)
 	{
 		subnet_a2c[i] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));
 		address.SetBase (subnet_a2c[i], "255.255.255.0");
 		interface_a2c[i] = address.Assign (dev_a2c[i]);
-		if(i == 7)
-		{
-			Ipv4Address addr = interface_a2c[i].GetAddress(0);
-			std::cout << addr <<std::endl;
-		}
 	}
 
 	Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
@@ -208,13 +182,12 @@ int main (int argc, char *argv[])
 		sinkApps.Add(packetSinkHelper.Install(h2e[i].Get(0)));
 	}
 	sinkApps.Start(Seconds(0.0));
-	sinkApps.Stop(Seconds(100.0));
+	sinkApps.Stop(Seconds(15.0));
 	
 	// Step 7 - Sources
     OnOffHelper clientHelper ("ns3::UdpSocketFactory", Address());
     clientHelper.SetAttribute ("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=1]"));
     clientHelper.SetAttribute ("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0]"));
-    //clientHelper.SetAttribute ("Remote", serverAddr);
     clientHelper.SetAttribute ("PacketSize", UintegerValue (1000));
     clientHelper.SetAttribute ("MaxBytes", UintegerValue (maxBytes));
     clientHelper.SetAttribute ("DataRate", DataRateValue (DataRate (dataRate)));
@@ -224,7 +197,7 @@ int main (int argc, char *argv[])
 		sourceApps.Add(clientHelper.Install(h2e[i].Get(0)));
 	}
 	sourceApps.Start(Seconds(5.0));
-	sourceApps.Stop(Seconds(100.0));
+	sourceApps.Stop(Seconds(15.0));
 
 	// Step 8
 	// Gathering sink addresses
@@ -245,11 +218,11 @@ int main (int argc, char *argv[])
     	Ptr<PacketSink> sink = StaticCast<PacketSink> (sinkApps.Get(i));
     	sink->TraceConnectWithoutContext("Rx", MakeCallback(&ThruPutAnalyzer::RecvPkt, tpAnalyzer));
 	}
-
-	for(int i=0; i<mh; i++) {
-		pointToPoint.EnablePcap ("Hw2-3", h2e[i].Get (0)->GetId (), true);
-		pointToPoint.EnablePcap ("Hw2-3", h2e[i].Get (1)->GetId (), true);
-	}
+	
+ 	// Step 11
+	pointToPoint.EnablePcap("Hw2-3/All", cmh);
+	pointToPoint.EnablePcap("Hw2-3/All", cme);
+	
 	Simulator::Run ();
 	Simulator::Destroy ();
 

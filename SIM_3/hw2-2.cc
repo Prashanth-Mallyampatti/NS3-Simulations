@@ -31,11 +31,11 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("ECE592HW2");
 
-uint32_t g_nSource = 3;
+uint32_t nSource = 3;
 bool parse_nSource(const std::string val) {
 	int value = std::stoi(val);
 	if (value > 0 && value < 4) {
-		g_nSource = value;
+		nSource = value;
 		return true;
 	}
 	return false;
@@ -63,7 +63,6 @@ class ThruPutAnalyzer {
 
 		// Step 4c
 		double CalcThruPut() {
-			NS_LOG_UNCOND("Total: " << m_totalRx << " start: " << m_startTime.GetSeconds() << " end: "<<m_lastTime.GetSeconds());
 			return ((m_totalRx / (m_lastTime.GetSeconds() - m_startTime.GetSeconds())) / double(ONEMBPS));
 		}
 };
@@ -82,9 +81,6 @@ main (int argc, char *argv[])
 
   	dataRate = ((stuID % 10) + 1) * ONEMBPS;
   	delay = ((stuID %3) +1);
-
-  	NS_LOG_UNCOND("Data rate: " << dataRate << " bps");
-  	NS_LOG_UNCOND("Delay: " << delay << " ms");
 
   	Time::SetResolution (Time::NS);
 
@@ -151,9 +147,9 @@ main (int argc, char *argv[])
 
 	// Step 6
 	ApplicationContainer clientApps = clientHelper.Install (nodes.Get (0));
-  	if (g_nSource>1)
+  	if (nSource>1)
 		clientApps.Add (clientHelper.Install (nodes.Get(1)));
-  	if (g_nSource>2)
+  	if (nSource>2)
 		clientApps.Add (clientHelper.Install (nodes.Get(2)));
   	clientApps.Start (Seconds (2.0));
   	clientApps.Stop (Seconds (10.0));
@@ -164,8 +160,9 @@ main (int argc, char *argv[])
  		
 	Simulator::Run ();
 	Simulator::Destroy ();
-  
-	NS_LOG_UNCOND("The calculated throughput with " << g_nSource << " senders is " << tpAnalyzer->CalcThruPut() << " Mbps");
+
+	// Step 7  
+	NS_LOG_UNCOND("The calculated throughput with " << nSource << " senders is " << tpAnalyzer->CalcThruPut() << " Mbps");
 
 	delete tpAnalyzer;
 	return 0;
