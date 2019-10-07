@@ -98,33 +98,18 @@ int main (int argc, char *argv[])
 		subnet_h2e[i] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));	
 		address.SetBase (subnet_h2e[i], "255.255.255.0");
 		interface_h2e[i] = address.Assign (dev_h2e[i]);
-        if(i == 0)
-		{
-			Ipv4Address addr = interface_h2e[i].GetAddress(0);
-			std::cout << addr << std::endl;
-		}
 	}
 	for(int i = 0; i < mh; i++)
 	{
 		subnet_e2a[i] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));
 		address.SetBase (subnet_e2a[i], "255.255.255.0");
 		interface_e2a[i] = address.Assign (dev_e2a[i]);
-		if(i == 127)
-		{
-			Ipv4Address addr = interface_e2a[i].GetAddress(0);
-			std::cout << addr << std::endl;
-		}
 	}	
 	for(int i = 0; i < mh; i++)
 	{
 		subnet_a2c[i] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));
 		address.SetBase (subnet_a2c[i], "255.255.255.0");
 		interface_a2c[i] = address.Assign (dev_a2c[i]);
-		if(i == 7)
-		{
-			Ipv4Address addr = interface_a2c[i].GetAddress(0);
-			std::cout << addr <<std::endl;
-		}
 	}
 
 	Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
