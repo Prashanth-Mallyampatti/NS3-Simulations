@@ -127,23 +127,23 @@ main (int argc, char *argv[])
     lvl4.Create(1);
     lvl5.Create(1);
 
-    NodeContainer 1_2[f], 2_3[n], 3_4[n], 4_5[1];
+    NodeContainer n1_2[f], n2_3[n], n3_4[n], n4_5[1];
 	for(int i = 0; i < f; i++)
 	{
-        1_2[i] = NodeContainer (lvl1.Get(i), lvl2.Get(0));
+        n1_2[i] = NodeContainer (lvl1.Get(i), lvl2.Get(0));
 	}
 
     for(int i = 0; i < n; i++)
 	{
-        2_3[i] = NodeContainer (lvl2.Get(0), lvl3.Get(i));
+        n2_3[i] = NodeContainer (lvl2.Get(0), lvl3.Get(i));
 	}
 
     for(int i = 0; i < n; i++)
 	{
-        3_4[i] = NodeContainer (lvl3.Get(i), lvl4.Get(0));
+        n3_4[i] = NodeContainer (lvl3.Get(i), lvl4.Get(0));
 	}
 
-    4_5[0] = NodeContainer (lvl4.Get(0), lvl5.Get(0));
+    n4_5[0] = NodeContainer (lvl4.Get(0), lvl5.Get(0));
 
 
     // Step 5
@@ -173,7 +173,7 @@ main (int argc, char *argv[])
 
 	for(int i = 0; i < f; i++)
 	{
-		dev_1_2[i] = p2p.Install (1_2[i]);
+		dev_1_2[i] = p2p.Install (n1_2[i]);
 		subnet_1_2[i] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));	
 		address.SetBase (subnet_1_2[i], "255.255.255.0");
 		interface_1_2[i] = address.Assign (dev_1_2[i]);
@@ -181,7 +181,7 @@ main (int argc, char *argv[])
 
     for(int i = 0; i < n; i++)
 	{
-		dev_2_3[i] = p2p.Install (2_3[i]);
+		dev_2_3[i] = p2p.Install (n2_3[i]);
 		subnet_2_3[i] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));	
 		address.SetBase (subnet_2_3[i], "255.255.255.0");
 		interface_2_3[i] = address.Assign (dev_2_3[i]);
@@ -189,13 +189,13 @@ main (int argc, char *argv[])
 
     for(int i = 0; i < n; i++)
 	{
-		dev_3_4[i] = p2p.Install (3_4[i]);
+		dev_3_4[i] = p2p.Install (n3_4[i]);
 		subnet_3_4[i] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));	
 		address.SetBase (subnet_3_4[i], "255.255.255.0");
 		interface_3_4[i] = address.Assign (dev_3_4[i]);
 	}
 
-    dev_4_5[0] = p2p.Install (4_5[0]);
+    dev_4_5[0] = p2p_1.Install (n4_5[0]);
     subnet_4_5[0] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));	
     address.SetBase (subnet_4_5[0], "255.255.255.0");
     interface_4_5[0] = address.Assign (dev_4_5[0]);
