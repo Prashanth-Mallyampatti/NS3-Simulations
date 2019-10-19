@@ -24,6 +24,9 @@
 #include "ns3/simulator.h"
 #include <memory>
 #include <time.h>
+#include "iostream"
+
+using namespace std;
 
 using namespace ns3;
 
@@ -77,11 +80,29 @@ class FlowAnalyzer {
 			return ((m_totalRx / (m_lastTime.GetSeconds() - m_startTime.GetSeconds())) / double(ONEMBPS));
 		}
 
+		void getPerFlowThruPut()
+		{
+				std::map<Ipv4Address, uint32_t>::iterator it = m_totalRxAll.begin();
+				while(it != m_totalRxAll.end())
+				{
+						NS_LOG_UNCOND(it->first << "-" << CalcThruPut(it->first));
+						it++;
+				}
+		}
 		// Step 4
 		double CalcThruPut(Ipv4Address addr) {
 			return ((m_totalRxAll.find(addr)->second / (m_lastTimeAll.find(addr)->second.GetSeconds() - m_startTime.GetSeconds())) / double(ONEMBPS));
 		}
 
+		void getPerFlowCT()
+		{
+				std::map<Ipv4Address, uint32_t>::iterator it = m_totalRxAll.begin();
+				while(it != m_totalRxAll.end())
+				{
+						NS_LOG_UNCOND(it->first << "-" << GetFCT(it->first));
+						it++;
+				}
+		}
 		// Step 5
 		double GetFCT(Ipv4Address addr) {
 			return (m_lastTimeAll.find(addr)->second.GetSeconds() - m_startTime.GetSeconds());
@@ -93,7 +114,7 @@ class FlowAnalyzer {
 			double flowTimes = 0.0;
 			for (const auto &p : m_lastTimeAll) {
 				numFlows++;
-				flowTimes += p.second.GetSeconds();
+				flowTimes += (p.second.GetSeconds() - m_startTime.GetSeconds());
 			}
 			return (flowTimes / double(numFlows));
 		}
@@ -102,7 +123,7 @@ class FlowAnalyzer {
 int
 main (int argc, char *argv[])
 {
-	uint32_t n, f, delay = 2, maxBytes=100000;
+	uint32_t n=3, f=5, delay = 2, maxBytes=100000;
  	uint64_t dataRate = 5 * ONEMBPS;
 
     // Step 2, 3, 4
@@ -115,9 +136,10 @@ main (int argc, char *argv[])
 
   	Time::SetResolution (Time::NS);
     Config::SetDefault("ns3::Ipv4GlobalRouting::RandomEcmpRouting", BooleanValue(true));
+    Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", UintegerValue(ecmpMode));
 
-  	LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
-  	LogComponentEnable ("OnOffApplication", LOG_LEVEL_INFO);
+  	//LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
+  	//LogComponentEnable ("OnOffApplication", LOG_LEVEL_INFO);
 
   	NS_LOG_INFO("Create nodes");
     NodeContainer lvl1, lvl2, lvl3, lvl4, lvl5; // Each level corresponds to a column od nodes in the topology
@@ -128,17 +150,17 @@ main (int argc, char *argv[])
     lvl5.Create(1);
 
     NodeContainer n1_2[f], n2_3[n], n3_4[n], n4_5[1];
-	for(int i = 0; i < f; i++)
+	for(uint32_t i = 0; i < f; i++)
 	{
         n1_2[i] = NodeContainer (lvl1.Get(i), lvl2.Get(0));
 	}
 
-    for(int i = 0; i < n; i++)
+    for(uint32_t i = 0; i < n; i++)
 	{
         n2_3[i] = NodeContainer (lvl2.Get(0), lvl3.Get(i));
 	}
 
-    for(int i = 0; i < n; i++)
+    for(uint32_t i = 0; i < n; i++)
 	{
         n3_4[i] = NodeContainer (lvl3.Get(i), lvl4.Get(0));
 	}
@@ -171,34 +193,57 @@ main (int argc, char *argv[])
 	Ipv4AddressHelper address;
 	Ipv4InterfaceContainer interface_1_2[f], interface_2_3[n], interface_3_4[n], interface_4_5[1];
 
-	for(int i = 0; i < f; i++)
+	for(uint32_t i = 0; i < f; i++)
 	{
 		dev_1_2[i] = p2p.Install (n1_2[i]);
 		subnet_1_2[i] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));	
 		address.SetBase (subnet_1_2[i], "255.255.255.0");
 		interface_1_2[i] = address.Assign (dev_1_2[i]);
+		
+		/*if (i==f-1)
+		{
+				cout << interface_1_2[i].GetAddress(0) << endl;
+				cout << interface_1_2[i].GetAddress(1) << endl;
+		}*/
+
 	}
 
-    for(int i = 0; i < n; i++)
+    for(uint32_t i = 0; i < n; i++)
 	{
 		dev_2_3[i] = p2p.Install (n2_3[i]);
 		subnet_2_3[i] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));	
 		address.SetBase (subnet_2_3[i], "255.255.255.0");
 		interface_2_3[i] = address.Assign (dev_2_3[i]);
+		/*if (i==n-1)
+		{
+				cout << interface_2_3[i].GetAddress(0) << endl;
+				cout << interface_2_3[i].GetAddress(1) << endl;
+		}*/
 	}
 
-    for(int i = 0; i < n; i++)
+    for(uint32_t i = 0; i < n; i++)
 	{
 		dev_3_4[i] = p2p.Install (n3_4[i]);
 		subnet_3_4[i] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));	
 		address.SetBase (subnet_3_4[i], "255.255.255.0");
 		interface_3_4[i] = address.Assign (dev_3_4[i]);
+		/*if (i==n-1)
+		{
+				cout << interface_3_4[i].GetAddress(0) << endl;
+				cout << interface_3_4[i].GetAddress(1) << endl;
+		}*/
 	}
 
     dev_4_5[0] = p2p_1.Install (n4_5[0]);
     subnet_4_5[0] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));	
     address.SetBase (subnet_4_5[0], "255.255.255.0");
     interface_4_5[0] = address.Assign (dev_4_5[0]);
+
+		//		cout << interface_4_5[0].GetAddress(0);
+		//		cout << interface_4_5[0].GetAddress(1);
+
+
+
 
   	Ipv4GlobalRoutingHelper::PopulateRoutingTables();
 
@@ -220,13 +265,13 @@ main (int argc, char *argv[])
   	clientHelper.SetAttribute ("MaxBytes", UintegerValue (maxBytes));
   	clientHelper.SetAttribute ("DataRate", DataRateValue (DataRate (dataRate)));
 
-	// FlowAnalyzer* flowAnalyzer = new FlowAnalyzer(Time(2*1000*1000*1000));
-	// Ptr<PacketSink> sink = StaticCast<PacketSink> (sinkApps.Get(0));
-	// sink->TraceConnectWithoutContext("Rx", MakeCallback(&FlowAnalyzer::RecvPkt, flowAnalyzer));
+	 FlowAnalyzer* flowAnalyzer = new FlowAnalyzer(Time(1*1000*1000*1000));
+	 Ptr<PacketSink> sink = StaticCast<PacketSink> (sinkApps.Get(0));
+	 sink->TraceConnectWithoutContext("Rx", MakeCallback(&FlowAnalyzer::RecvPkt, flowAnalyzer));
 
     // Step 8
     ApplicationContainer clientApps = clientHelper.Install (lvl1.Get (0));
-    for (int i=1; i<f;i++) {
+    for (uint32_t i=1; i<f;i++) {
         clientApps.Add (clientHelper.Install (lvl1.Get(i)));
     }
   	clientApps.Start (Seconds (1.0));
@@ -237,12 +282,14 @@ main (int argc, char *argv[])
 	Simulator::Run ();
 	Simulator::Destroy ();
 
-	// NS_LOG_UNCOND("The calculated flow throughput with " << nSource << " senders is " << flowAnalyzer->CalcThruPut() << " Mbps");
-	// NS_LOG_UNCOND("The calculated flow completion time with " << nSource << " senders is " << flowAnalyzer->GetAvgFCT() << " seconds");
+	 NS_LOG_UNCOND("The calculated flow throughput is " << flowAnalyzer->CalcThruPut() << " Mbps");
+	 NS_LOG_UNCOND("The calculated flow completion time is " << flowAnalyzer->GetAvgFCT() << " seconds");
 
-/*	NS_LOG_UNCOND("The calculated flow throughput with " << nSource << " senders is " << flowAnalyzer->CalcThruPut() << " Mbps");
-	NS_LOG_UNCOND("The calculated flow throughput with " << nSource << " senders is " << flowAnalyzer->CalcThruPut() << " Mbps");
-*/
-	//delete flowAnalyzer;
+	NS_LOG_UNCOND("Calculated per flow throughput");
+	flowAnalyzer->getPerFlowThruPut();
+	NS_LOG_UNCOND("Calculated per flow completion time");
+	flowAnalyzer->getPerFlowCT();
+
+	delete flowAnalyzer;
 	return 0;
 }
