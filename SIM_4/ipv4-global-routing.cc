@@ -148,7 +148,7 @@ Ipv4GlobalRouting::AddASExternalRouteTo (Ipv4Address network,
 
 Ptr<Ipv4Route>
 Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr< const Packet> p, const Ipv4Header &h, Ptr<NetDevice> oif)
-{
+{ 
   NS_LOG_FUNCTION (this << dest << oif);
   NS_LOG_LOGIC ("Looking for route for destination " << dest);
   Ptr<Ipv4Route> rtentry = 0;
@@ -268,22 +268,24 @@ Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr< const Packet> p, const I
   				src.Serialize (buf);
 					buf[4] = (srcPort >> 8) & 0xff;
 					buf[5] = srcPort & 0xff;  
-					dest.Serialize (buf + 4);
+					dest.Serialize (buf + 6);
   				buf[10] = (destPort >> 8) & 0xff;
   				buf[11] = destPort & 0xff;
 					buf[12] = prot;
 		
-				//	NS_LOG_UNCOND(src << "-" << srcPort << "-" << dest << "-" << destPort << "-" << prot);				
-					/*NS_LOG_UNCOND("FLOW ID:");
-					for(int i=0; i<13; i++)
-						NS_LOG_UNCOND(buf[i]);
-				*/
+					// NS_LOG_UNCOND(src << "-" << srcPort << "-" << dest << "-" << destPort << "-" << unsigned(prot));				
+					// NS_LOG_UNCOND("FLOW ID:");
+					// for(int i=0; i<13; i++)
+					//  	std::cout << (unsigned(buf[i]));
+          // std::cout << "\n";
+				
 					switch(m_ecmpMode)
 					{
 						case 1: //Modulo N hash
 									{			
 									uint32_t hash = Hash32 ((char*) buf, 13);
-									selectIndex = hash % allRoutes.size();						
+									selectIndex = hash % allRoutes.size();
+                  // NS_LOG_UNCOND(hash << "-" << allRoutes.size());
 									}
 									break;
 						case 2: //Hash-Threshold
