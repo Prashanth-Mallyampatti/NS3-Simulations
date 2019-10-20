@@ -283,46 +283,47 @@ Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr< const Packet> p, const I
 					{
 						case 1: //Modulo N hash
 									{			
-									uint32_t hash = Hash32 ((char*) buf, 13);
-									selectIndex = hash % allRoutes.size();
-                  // NS_LOG_UNCOND(hash << "-" << allRoutes.size());
+										uint32_t hash = Hash32 ((char*) buf, 13);
+										selectIndex = hash % allRoutes.size();
+                  	// NS_LOG_UNCOND(hash << "-" << allRoutes.size());
 									}
 									break;
 						case 2: //Hash-Threshold
 									{
-									uint32_t range = ((uint32_t) -1) / allRoutes.size();
-									uint32_t hash = Hash32 ((char*) buf, 13);
-									selectIndex = hash / range;
+										uint32_t range = ((uint32_t) -1) / allRoutes.size();
+										uint32_t hash = Hash32 ((char*) buf, 13);
+										selectIndex = hash / range;
 									
-									if(selectIndex >= allRoutes.size())
+										if(selectIndex >= allRoutes.size())
 											selectIndex = allRoutes.size() - 1;
 									}
 									break;
 						case 3: //HRW hash
 									{
-									uint32_t maxHash=0;
-									for(uint32_t i = 0; i < allRoutes.size(); i++)
-									{
-										uint8_t buf_1[17];
-										for(auto j = 0; j < 13; j++)
+										uint32_t maxHash=0;
+										for(uint32_t i = 0; i < allRoutes.size(); i++)
 										{
-											buf_1[j] = buf[j];
-										}
-										uint32_t oif = allRoutes[i]->GetInterface();
-										buf_1[13] = (oif >> 24) & 0xff;
-										buf_1[14] = (oif >> 16) & 0xff;
-										buf_1[15] = (oif >> 8) & 0xff;
-										buf_1[16] = (oif) & 0xff;
+											uint8_t buf_1[17];
+											for(auto j = 0; j < 13; j++)
+											{
+												buf_1[j] = buf[j];
+											}
+											uint32_t oif = allRoutes[i]->GetInterface();
+											buf_1[13] = (oif >> 24) & 0xff;
+											buf_1[14] = (oif >> 16) & 0xff;
+											buf_1[15] = (oif >> 8) & 0xff;
+											buf_1[16] = (oif) & 0xff;
 
-										uint32_t hash = Hash32((char*) buf_1, 17);
-										if (hash > maxHash) {
-											maxHash = i;
-											selectIndex = i;
+											uint32_t hash = Hash32((char*) buf_1, 17);
+											if (hash > maxHash) {
+												maxHash = i;
+												selectIndex = i;
+											}
 										}
-									}
 									}								
 									break;
-          	default: selectIndex = m_rand->GetInteger (0, allRoutes.size ()-1);
+          	
+						default: selectIndex = m_rand->GetInteger (0, allRoutes.size ()-1);
 					}
         }
       else 
