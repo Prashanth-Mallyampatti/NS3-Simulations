@@ -27,7 +27,6 @@
 #include "iostream"
 
 using namespace std;
-
 using namespace ns3;
 
 #define ONEMBPS 1000000
@@ -85,7 +84,7 @@ class FlowAnalyzer {
 				std::map<Ipv4Address, uint32_t>::iterator it = m_totalRxAll.begin();
 				while(it != m_totalRxAll.end())
 				{
-						NS_LOG_UNCOND(it->first << "-" << CalcThruPut(it->first));
+						NS_LOG_UNCOND(it->first << " - " << CalcThruPut(it->first));
 						it++;
 				}
 		}
@@ -99,7 +98,7 @@ class FlowAnalyzer {
 				std::map<Ipv4Address, uint32_t>::iterator it = m_totalRxAll.begin();
 				while(it != m_totalRxAll.end())
 				{
-						NS_LOG_UNCOND(it->first << "-" << GetFCT(it->first));
+						NS_LOG_UNCOND(it->first << " - " << GetFCT(it->first));
 						it++;
 				}
 		}
@@ -120,11 +119,17 @@ class FlowAnalyzer {
 		}
 };
 
+string getPcapString(uint32_t ecmpMode, uint32_t n, uint32_t f)
+{
+	std::string s = ((((((std::string("Hw3-2/") + "All" + "-") + std::to_string(ecmpMode)) + "-") + std::to_string(n)) + "-") + std::to_string(f));
+	return s;
+}
 int
 main (int argc, char *argv[])
 {
 	uint32_t n=3, f=5, delay = 2, maxBytes=100000;
  	uint64_t dataRate = 5 * ONEMBPS;
+	string str;
 
     // Step 2, 3, 4
   	CommandLine cmd;
@@ -214,7 +219,7 @@ main (int argc, char *argv[])
 		subnet_2_3[i] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));	
 		address.SetBase (subnet_2_3[i], "255.255.255.0");
 		interface_2_3[i] = address.Assign (dev_2_3[i]);
-		/*if (i==n-1)
+		/*if (i==1)
 		{
 				cout << interface_2_3[i].GetAddress(0) << endl;
 				cout << interface_2_3[i].GetAddress(1) << endl;
@@ -242,13 +247,10 @@ main (int argc, char *argv[])
 		//		cout << interface_4_5[0].GetAddress(0);
 		//		cout << interface_4_5[0].GetAddress(1);
 
-
-
-
   	Ipv4GlobalRoutingHelper::PopulateRoutingTables();
 
     // Step 6
-	PacketSinkHelper packetSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress(Ipv4Address::GetAny(), 7999));
+	PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", InetSocketAddress(Ipv4Address::GetAny(), 7999));
 
   	ApplicationContainer sinkApps = packetSinkHelper.Install (lvl5.Get (0));
   	sinkApps.Start (Seconds (0.0));
@@ -257,7 +259,7 @@ main (int argc, char *argv[])
 	AddressValue serverAddr (InetSocketAddress(interface_4_5[0].GetAddress(1), 7999));
   
     // Step 7
-	OnOffHelper clientHelper ("ns3::UdpSocketFactory", Address());
+	OnOffHelper clientHelper ("ns3::TcpSocketFactory", Address());
   	clientHelper.SetAttribute ("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=1]"));
   	clientHelper.SetAttribute ("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0]"));
 	clientHelper.SetAttribute ("Remote", serverAddr);
@@ -277,7 +279,8 @@ main (int argc, char *argv[])
   	clientApps.Start (Seconds (1.0));
   	clientApps.Stop (Seconds (100.0));
 
-	//p2p.EnablePcapAll("Hw3-1");
+		str = getPcapString(ecmpMode, n, f);
+		p2p.EnablePcapAll(str);
  		
 	Simulator::Run ();
 	Simulator::Destroy ();
