@@ -134,12 +134,7 @@ class QueueMonitor {
 
 		// Step 4c
 		void QueueChange(uint32_t oval, uint32_t nval) {
-			//uint32_t val = nval;
 			m_qLens.push_back(nval);
-			//NS_LOG_UNCOND(Simulator::Now());
-			// m_qTimes.push_back(Time(Simulator::Now()));
-			/*double now = 2.0; //Simulator::Now().GetSeconds();
-			*/
 			m_qTimes.push_back(Simulator::Now());
 		}
 
@@ -160,13 +155,13 @@ class QueueMonitor {
 
 		// Step 4e
 		void SaveQueueLen(std::string fn) {
-			ofstream outfile;
-			outfile.open(fn);
+			std::fstream outfile;
+    		outfile.open(fn,ios::trunc | ios::out | ios::in );
 
 			for (uint32_t i = 0; i < m_qLens.size(); i++) {
-				outfile << m_qTimes.at(i) << " " << m_qLens.at(i);
+				outfile << m_qTimes.at(i) << " " << m_qLens.at(i) << std::endl;
 			}
-  			outfile.close();
+  			//outfile.close();
 		}
 };
 
@@ -200,7 +195,29 @@ int main (int argc, char *argv[])
     lvl4.Create(1);
     lvl5.Create(1);
 
-    NodeContainer n1_2[f], n2_3[n], n3_4[n], n4_5[1];
+	InternetStackHelper stack;
+  	stack.Install (lvl1);
+    stack.Install (lvl2);
+    stack.Install (lvl3);
+    stack.Install (lvl4);
+    stack.Install (lvl5);
+
+    // Step 2
+  	NS_LOG_INFO("Create P2P channels");
+  	PointToPointHelper p2p;
+  	p2p.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (dataRate)));
+  	p2p.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (delay)));
+	
+	PointToPointHelper p2p_m;
+  	p2p_m.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (dataRate)));
+  	p2p_m.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (delay)));
+	p2p_m.SetQueue ("ns3::DropTailQueue", "MaxSize", StringValue("1p"));
+	
+    PointToPointHelper p2p_1;	
+	p2p_1.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (dataRate * f)));
+  	p2p_1.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (delay)));
+
+	NodeContainer n1_2[f], n2_3[n], n3_4[n], n4_5[1];
 	for(uint32_t i = 0; i < f; i++)
 	{
         n1_2[i] = NodeContainer (lvl1.Get(i), lvl2.Get(0));
@@ -217,29 +234,6 @@ int main (int argc, char *argv[])
 	}
 
     n4_5[0] = NodeContainer (lvl4.Get(0), lvl5.Get(0));
-
-
-    // Step 2
-  	NS_LOG_INFO("Create P2P channels");
-  	PointToPointHelper p2p;
-  	p2p.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (dataRate)));
-  	p2p.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (delay)));
-	
-	PointToPointHelper p2p_m;
-  	p2p_m.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (dataRate)));
-  	p2p_m.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (delay)));
-	p2p_m.SetQueue ("ns3:DropTailQueue", "MaxSize", StringValue("1p"));
-	
-    PointToPointHelper p2p_1;	
-	p2p_1.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (dataRate * f)));
-  	p2p_1.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (delay)));
-
-	InternetStackHelper stack;
-  	stack.Install (lvl1);
-    stack.Install (lvl2);
-    stack.Install (lvl3);
-    stack.Install (lvl4);
-    stack.Install (lvl5);
 
   	NetDeviceContainer dev_1_2[f], dev_2_3[n], dev_3_4[n], dev_4_5[1];
 
@@ -304,7 +298,6 @@ int main (int argc, char *argv[])
 	// Step 5
 	std::vector<QueueMonitor*> queueMonitorContainer;
 	for (uint32_t i=0; i< n; i++) {
-		//QueueMonitor *qm = new QueueMonitor(Time(1*1000*1000*1000));
 		queueMonitorContainer.push_back(new QueueMonitor(Time(1*1000*1000*1000)));
 		qd_2_3[i].Get(0)->TraceConnectWithoutContext("PacketsInQueue", MakeCallback(&QueueMonitor::QueueChange, queueMonitorContainer.at(i)));
 	}
