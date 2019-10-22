@@ -303,9 +303,9 @@ int main (int argc, char *argv[])
 	}
 
 	
-	// FlowAnalyzer* flowAnalyzer = new FlowAnalyzer(Time(1*1000*1000*1000));
-	// Ptr<PacketSink> sink = StaticCast<PacketSink> (sinkApps.Get(0));
-	// sink->TraceConnectWithoutContext("Rx", MakeCallback(&FlowAnalyzer::RecvPkt, flowAnalyzer));
+	FlowAnalyzer* flowAnalyzer = new FlowAnalyzer(Time(1*1000*1000*1000));
+	Ptr<PacketSink> sink = StaticCast<PacketSink> (sinkApps.Get(0));
+	sink->TraceConnectWithoutContext("Rx", MakeCallback(&FlowAnalyzer::RecvPkt, flowAnalyzer));
 
     ApplicationContainer clientApps = clientHelper.Install (lvl1.Get (0));
     for (uint32_t i=1; i<f;i++) {
@@ -328,16 +328,16 @@ int main (int argc, char *argv[])
 
 		st = qd_2_3[i].Get(0)->GetStats();
 		NS_LOG_UNCOND("Queue " << i << " stats:\n" << st);
-		NS_LOG_UNCOND("Avg Queue len " << queueMonitorContainer.at(i)->GetAvgQueueLen());
+		// NS_LOG_UNCOND("Avg Queue len " << queueMonitorContainer.at(i)->GetAvgQueueLen());
 	}
-	// NS_LOG_UNCOND("The calculated flow throughput is " << flowAnalyzer->CalcThruPut() << " Mbps");
-	// NS_LOG_UNCOND("The calculated flow completion time is " << flowAnalyzer->GetAvgFCT() << " seconds");
+	NS_LOG_UNCOND("The calculated flow throughput is " << flowAnalyzer->CalcThruPut() << " Mbps");
+	NS_LOG_UNCOND("The calculated flow completion time is " << flowAnalyzer->GetAvgFCT() << " seconds");
 
-	// NS_LOG_UNCOND("Calculated per flow throughput");
-	// flowAnalyzer->getPerFlowThruPut();
-	// NS_LOG_UNCOND("Calculated per flow completion time");
-	// flowAnalyzer->getPerFlowCT();
+	NS_LOG_UNCOND("Calculated per flow throughput");
+	flowAnalyzer->getPerFlowThruPut();
+	NS_LOG_UNCOND("Calculated per flow completion time");
+	flowAnalyzer->getPerFlowCT();
 
-	// delete flowAnalyzer;
+	delete flowAnalyzer;
 	return 0;
 }

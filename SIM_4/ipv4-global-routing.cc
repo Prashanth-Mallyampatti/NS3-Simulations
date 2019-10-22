@@ -229,16 +229,15 @@ Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr< const Packet> p, const I
       // pick up one of the routes uniformly at random if random
       // ECMP routing is enabled, or always select the first route
       // consistently if random ECMP routing is disabled
-      uint32_t selectIndex;
+      uint32_t selectIndex = 0;
 
 
-      if (m_randomEcmpRouting)
+      if (m_randomEcmpRouting && allRoutes.size() > 1)
         {
-
 					// Compute flow ID
-					Ipv4Address src = h.GetSource ();
-  				Ipv4Address dest = h.GetDestination ();
-  				uint8_t prot = h.GetProtocol ();
+					uint32_t src = h.GetSource().Get();
+  				uint32_t dest = h.GetDestination().Get();
+  				uint8_t prot = h.GetProtocol();
   				uint16_t fragOffset = h.GetFragmentOffset ();
 
   				TcpHeader tcpHdr;
@@ -263,67 +262,50 @@ Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr< const Packet> p, const I
       			NS_LOG_WARN ("Unknown transport protocol, no port number included in hash computation");
     			}
 
-  				/* serialize the 5-tuple in buf */
-					uint8_t buf[13];
-  				src.Serialize (buf);
-					buf[4] = (srcPort >> 8) & 0xff;
-					buf[5] = srcPort & 0xff;  
-					dest.Serialize (buf + 6);
-  				buf[10] = (destPort >> 8) & 0xff;
-  				buf[11] = destPort & 0xff;
-					buf[12] = prot;
-		
-					// NS_LOG_UNCOND(src << "-" << srcPort << "-" << dest << "-" << destPort << "-" << unsigned(prot));				
-					// NS_LOG_UNCOND("FLOW ID:");
-					// for(int i=0; i<13; i++)
-					//  	std::cout << (unsigned(buf[i]));
-          // std::cout << "\n";
+					uint8_t *buf = new uint8_t[13];
+          std::memcpy(buf, &src, 4);
+          std::memcpy((buf+4), &srcPort, 2);
+					std::memcpy((buf+6), &dest, 4);
+  				std::memcpy((buf+10), &destPort, 2);
+					std::memcpy((buf+12), &prot, 1);
 				
 					switch(m_ecmpMode)
 					{
 						case 1: //Modulo N hash
 									{			
-										uint32_t hash = Hash32 ((char*) buf, 13);
-										selectIndex = hash % allRoutes.size();
-                  	// NS_LOG_UNCOND(hash << "-" << allRoutes.size());
+									uint32_t hash = Hash32 ((char*) buf, 13);
+									selectIndex = hash % allRoutes.size();
 									}
 									break;
 						case 2: //Hash-Threshold
 									{
-										uint32_t range = ((uint32_t) -1) / allRoutes.size();
-										uint32_t hash = Hash32 ((char*) buf, 13);
-										selectIndex = hash / range;
+									uint32_t range = ((uint32_t) -1) / allRoutes.size();
+									uint32_t hash = Hash32 ((char*) buf, 13);
+									selectIndex = hash / range;
 									
-										if(selectIndex >= allRoutes.size())
+									if(selectIndex >= allRoutes.size())
 											selectIndex = allRoutes.size() - 1;
 									}
 									break;
 						case 3: //HRW hash
 									{
-										uint32_t maxHash=0;
-										for(uint32_t i = 0; i < allRoutes.size(); i++)
-										{
-											uint8_t buf_1[17];
-											for(auto j = 0; j < 13; j++)
-											{
-												buf_1[j] = buf[j];
-											}
-											uint32_t oif = allRoutes[i]->GetInterface();
-											buf_1[13] = (oif >> 24) & 0xff;
-											buf_1[14] = (oif >> 16) & 0xff;
-											buf_1[15] = (oif >> 8) & 0xff;
-											buf_1[16] = (oif) & 0xff;
+									uint32_t maxHash=0;
+									for(uint32_t i = 0; i < allRoutes.size(); i++)
+									{
+                    uint32_t oif = allRoutes[i]->GetInterface();
+										uint8_t *buf_1 = new uint8_t[17];
+                    std::memcpy(buf_1, buf, 13);
+                    std::memcpy((buf_1+13), &oif, 4);
 
-											uint32_t hash = Hash32((char*) buf_1, 17);
-											if (hash > maxHash) {
-												maxHash = i;
-												selectIndex = i;
-											}
+										uint32_t hash = Hash32((char*) buf_1, 17);
+										if (hash > maxHash) {
+											maxHash = hash;
+											selectIndex = i;
 										}
+									}
 									}								
 									break;
-          	
-						default: selectIndex = m_rand->GetInteger (0, allRoutes.size ()-1);
+          	default: selectIndex = m_rand->GetInteger (0, allRoutes.size ()-1);
 					}
         }
       else 

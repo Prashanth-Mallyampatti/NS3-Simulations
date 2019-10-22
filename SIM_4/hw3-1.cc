@@ -107,3 +107,7 @@ class FlowAnalyzer {
 			return (flowTimes / double(numFlows));
 		}
 };
+
+int main() {
+	// Just to pass complilation
+}

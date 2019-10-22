@@ -67,8 +67,9 @@ class FlowAnalyzer {
 			Ipv4Address addrstr = thisAddr.GetIpv4();
 			
 			// Step 3b
-			m_lastTimeAll[addrstr] = Simulator::Now();
-			m_lastTime = Simulator::Now();
+			Time now(Simulator::Now());
+			m_lastTimeAll[addrstr] = now;
+			m_lastTime = now;
 
 			// Step 3c
 			m_totalRxAll[addrstr] += (p->GetSize() * 8);
@@ -76,17 +77,18 @@ class FlowAnalyzer {
 		}
 
 		double CalcThruPut() {
+			// NS_LOG_UNCOND("ST: " << m_startTime.GetSeconds() << " ET: " << m_lastTime.GetSeconds());
 			return ((m_totalRx / (m_lastTime.GetSeconds() - m_startTime.GetSeconds())) / double(ONEMBPS));
 		}
 
 		void getPerFlowThruPut()
 		{
-				std::map<Ipv4Address, uint32_t>::iterator it = m_totalRxAll.begin();
-				while(it != m_totalRxAll.end())
-				{
-						NS_LOG_UNCOND(it->first << " - " << CalcThruPut(it->first));
-						it++;
-				}
+			std::map<Ipv4Address, uint32_t>::iterator it = m_totalRxAll.begin();
+			while(it != m_totalRxAll.end())
+			{
+				NS_LOG_UNCOND(it->first << " - " << CalcThruPut(it->first));
+				it++;
+			}
 		}
 		// Step 4
 		double CalcThruPut(Ipv4Address addr) {
@@ -95,12 +97,12 @@ class FlowAnalyzer {
 
 		void getPerFlowCT()
 		{
-				std::map<Ipv4Address, uint32_t>::iterator it = m_totalRxAll.begin();
-				while(it != m_totalRxAll.end())
-				{
-						NS_LOG_UNCOND(it->first << " - " << GetFCT(it->first));
-						it++;
-				}
+			std::map<Ipv4Address, uint32_t>::iterator it = m_totalRxAll.begin();
+			while(it != m_totalRxAll.end())
+			{
+					NS_LOG_UNCOND(it->first << " - " << GetFCT(it->first));
+					it++;
+			}
 		}
 		// Step 5
 		double GetFCT(Ipv4Address addr) {
@@ -119,17 +121,10 @@ class FlowAnalyzer {
 		}
 };
 
-string getPcapString(uint32_t ecmpMode, uint32_t n, uint32_t f)
-{
-	std::string s = ((((((std::string("Hw3-2/") + "All" + "-") + std::to_string(ecmpMode)) + "-") + std::to_string(n)) + "-") + std::to_string(f));
-	return s;
-}
-int
-main (int argc, char *argv[])
+int main (int argc, char *argv[])
 {
 	uint32_t n=3, f=5, delay = 2, maxBytes=100000;
  	uint64_t dataRate = 5 * ONEMBPS;
-	string str;
 
     // Step 2, 3, 4
   	CommandLine cmd;
@@ -204,13 +199,6 @@ main (int argc, char *argv[])
 		subnet_1_2[i] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));	
 		address.SetBase (subnet_1_2[i], "255.255.255.0");
 		interface_1_2[i] = address.Assign (dev_1_2[i]);
-		
-		/*if (i==f-1)
-		{
-				cout << interface_1_2[i].GetAddress(0) << endl;
-				cout << interface_1_2[i].GetAddress(1) << endl;
-		}*/
-
 	}
 
     for(uint32_t i = 0; i < n; i++)
@@ -219,11 +207,6 @@ main (int argc, char *argv[])
 		subnet_2_3[i] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));	
 		address.SetBase (subnet_2_3[i], "255.255.255.0");
 		interface_2_3[i] = address.Assign (dev_2_3[i]);
-		/*if (i==1)
-		{
-				cout << interface_2_3[i].GetAddress(0) << endl;
-				cout << interface_2_3[i].GetAddress(1) << endl;
-		}*/
 	}
 
     for(uint32_t i = 0; i < n; i++)
@@ -232,20 +215,12 @@ main (int argc, char *argv[])
 		subnet_3_4[i] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));	
 		address.SetBase (subnet_3_4[i], "255.255.255.0");
 		interface_3_4[i] = address.Assign (dev_3_4[i]);
-		/*if (i==n-1)
-		{
-				cout << interface_3_4[i].GetAddress(0) << endl;
-				cout << interface_3_4[i].GetAddress(1) << endl;
-		}*/
 	}
 
     dev_4_5[0] = p2p_1.Install (n4_5[0]);
     subnet_4_5[0] = Ipv4AddressGenerator::NextNetwork (Ipv4Mask("/24"));	
     address.SetBase (subnet_4_5[0], "255.255.255.0");
     interface_4_5[0] = address.Assign (dev_4_5[0]);
-
-		//		cout << interface_4_5[0].GetAddress(0);
-		//		cout << interface_4_5[0].GetAddress(1);
 
   	Ipv4GlobalRoutingHelper::PopulateRoutingTables();
 
@@ -279,14 +254,16 @@ main (int argc, char *argv[])
   	clientApps.Start (Seconds (1.0));
   	clientApps.Stop (Seconds (100.0));
 
-		str = getPcapString(ecmpMode, n, f);
-		p2p.EnablePcapAll(str);
- 		
+	// Step 9
+	std::string pcapPrefix = std::string("Hw3-2/All-") + std::to_string(ecmpMode) + "-" + std::to_string(n) + "-" + std::to_string(f);
+	p2p.EnablePcapAll(pcapPrefix);
+ 	p2p_1.EnablePcapAll(pcapPrefix);
+
 	Simulator::Run ();
 	Simulator::Destroy ();
 
-	 NS_LOG_UNCOND("The calculated flow throughput is " << flowAnalyzer->CalcThruPut() << " Mbps");
-	 NS_LOG_UNCOND("The calculated flow completion time is " << flowAnalyzer->GetAvgFCT() << " seconds");
+	NS_LOG_UNCOND("The calculated flow throughput is " << flowAnalyzer->CalcThruPut() << " Mbps");
+	NS_LOG_UNCOND("The calculated flow completion time is " << flowAnalyzer->GetAvgFCT() << " seconds");
 
 	NS_LOG_UNCOND("Calculated per flow throughput");
 	flowAnalyzer->getPerFlowThruPut();
