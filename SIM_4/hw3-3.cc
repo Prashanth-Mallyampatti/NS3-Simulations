@@ -141,6 +141,8 @@ class QueueMonitor {
 		// Step 4d
 		// Time average means you multiply each queue length with the time that the queue stays with that length, and then finally divide the sum over the course of the entire time.
 		double GetAvgQueueLen() {
+			// If queue is not used at all, return 0
+			if (m_qLens.size() == 0) return (double)(0.0);
 			double sumLensTimeAvg;
 			for (uint32_t i=0; i < m_qLens.size(); i++) { 
     			double timeInterval;
@@ -161,7 +163,6 @@ class QueueMonitor {
 			for (uint32_t i = 0; i < m_qLens.size(); i++) {
 				outfile << m_qTimes.at(i) << " " << m_qLens.at(i) << std::endl;
 			}
-  			//outfile.close();
 		}
 };
 
@@ -188,7 +189,7 @@ int main (int argc, char *argv[])
   	//LogComponentEnable ("OnOffApplication", LOG_LEVEL_INFO);
 
   	NS_LOG_INFO("Create nodes");
-    NodeContainer lvl1, lvl2, lvl3, lvl4, lvl5; // Each level corresponds to a column od nodes in the topology
+    NodeContainer lvl1, lvl2, lvl3, lvl4, lvl5; // Each level corresponds to a column of nodes in the topology
     lvl1.Create(f);
     lvl2.Create(1);
     lvl3.Create(n);
@@ -315,28 +316,31 @@ int main (int argc, char *argv[])
   	clientApps.Stop (Seconds (100.0));
 
 	// Step 8
-	//p2p.EnablePcapAll("Hw3-1");
- 		
+	std::string pcapPrefix = "Hw3-3/All-" + std::to_string(ecmpMode) + "-" + std::to_string(n) + "-" + std::to_string(f) + "-" + queueSize;
+	p2p.EnablePcapAll(pcapPrefix);
+	p2p_m.EnablePcapAll(pcapPrefix);
+ 	p2p_1.EnablePcapAll(pcapPrefix);
+
 	Simulator::Run ();
 	Simulator::Destroy ();
 
 	// Step 6, 7
 	for (uint32_t i=0; i < n; i++) {
 		QueueDisc::Stats st;
-		std::string filename = "Hw3-3/Q-" + std::to_string(ecmpMode) + "-" + std::to_string(n) + "-" + std::to_string(f) + "-QueueSize-" + std::to_string(i) + ".txt";
+		std::string filename = "Hw3-3/Q-" + std::to_string(ecmpMode) + "-" + std::to_string(n) + "-" + std::to_string(f) + "-" + queueSize + "-" + std::to_string(i) + ".txt";
 		queueMonitorContainer.at(i)->SaveQueueLen(filename);
 
 		st = qd_2_3[i].Get(0)->GetStats();
 		NS_LOG_UNCOND("Queue " << i << " stats:\n" << st);
-		// NS_LOG_UNCOND("Avg Queue len " << queueMonitorContainer.at(i)->GetAvgQueueLen());
+		NS_LOG_UNCOND("Avg Queue len " << queueMonitorContainer.at(i)->GetAvgQueueLen());
 	}
 	NS_LOG_UNCOND("The calculated flow throughput is " << flowAnalyzer->CalcThruPut() << " Mbps");
 	NS_LOG_UNCOND("The calculated flow completion time is " << flowAnalyzer->GetAvgFCT() << " seconds");
 
-	NS_LOG_UNCOND("Calculated per flow throughput");
-	flowAnalyzer->getPerFlowThruPut();
-	NS_LOG_UNCOND("Calculated per flow completion time");
-	flowAnalyzer->getPerFlowCT();
+	// NS_LOG_UNCOND("Calculated per flow throughput");
+	// flowAnalyzer->getPerFlowThruPut();
+	// NS_LOG_UNCOND("Calculated per flow completion time");
+	// flowAnalyzer->getPerFlowCT();
 
 	delete flowAnalyzer;
 	return 0;
