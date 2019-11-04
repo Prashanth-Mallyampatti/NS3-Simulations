@@ -110,8 +110,8 @@ TcpDctcp::PktsAcked (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked, const Time
 
   // 1.  Compute the bytes acknowledged (TCP Selective Acknowledgment
   //      (SACK) options [RFC2018] are ignored for this computation):
-  //         BytesAcked = SEG.ACK - SND.UNA
-  uint32_t bytesAcked = segmentsAcked - (tcb->m_lastAckedSeq+1);
+  //         BytesAcked = SEG.ACK - SND.UNA (Not sure how this will return bytes..using alt method below)
+  uint32_t bytesAcked = segmentsAcked * tcb->m_segmentSize;
 
   //  2.  Update the bytes sent:
   //         DCTCP.BytesAcked += BytesAcked
