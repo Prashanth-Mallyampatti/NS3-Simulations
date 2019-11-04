@@ -29,6 +29,7 @@
 #include "ns3/traffic-control-module.h"
 #include "ns3/traffic-control-helper.h"
 #include "ns3/fifo-queue-disc.h"
+#include "ns3/tcp-dctcp.h"
 
 using namespace std;
 
@@ -173,7 +174,7 @@ int main (int argc, char *argv[])
 	std::string queueSize = "100p";
 	uint32_t K = 20, qLen = 200;
 	double g = 0.0625;
-	bool dctcp =false;
+	bool dctcp = true;
 
     // Step 2
   	CommandLine cmd;
@@ -231,13 +232,13 @@ int main (int argc, char *argv[])
 
 	// Step 7
 	TrafficControlHelper tch;
-	tch.SetRootQueueDisc (dctcp ? "ns3::FifoQueueDisc" : "ns3::RedQueueDisc");
+	tch.SetRootQueueDisc (!dctcp ? "ns3::FifoQueueDisc" : "ns3::RedQueueDisc");
 
 	NetDeviceContainer device_AC, device_BC, device_CD;
 	device_AC = pointToPoint.Install (nodes_AC);
 	device_BC = pointToPoint.Install (nodes_BC);
 	device_CD = pointToPoint.Install (nodes_CD);
-	QueueDiscContainer queueDisc_CD = tch.Install(nodes_CD);
+	QueueDiscContainer queueDisc_CD = tch.Install(device_CD);
 
 	// Step 8
 	Ipv4AddressHelper address;
@@ -270,7 +271,7 @@ int main (int argc, char *argv[])
   	clientApps.Stop (Seconds (10.0));
 
 	// Step 12
-	QueueMonitor *qm = new QueueMonitor(Time(0)));
+	QueueMonitor *qm = new QueueMonitor(Time(0));
 	queueDisc_CD.Get(0)->TraceConnectWithoutContext("PacketsInQueue", MakeCallback(&QueueMonitor::QueueChange, qm));
 
 	// Step 13	
@@ -283,7 +284,9 @@ int main (int argc, char *argv[])
 
 	// Step 15
 	// QueueDisc::Stats st;
-	std::string filename = "Hw4/queue-" + (dctcp ? "dctcp-" : "tcp-") + std::to_string(K) + "-" + std::to_string(g) + "-" + std::to_string(qLen) + ".txt";
+
+	std::string mode = (dctcp ? "dctcp-" : "tcp-");
+	std::string filename = "Hw4/queue-" + mode + std::to_string(K) + "-" + std::to_string(g) + "-" + std::to_string(qLen) + ".txt";
 	qm->SaveQueueLen(filename);
 
 	// Step 14

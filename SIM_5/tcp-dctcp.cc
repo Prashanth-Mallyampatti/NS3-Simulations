@@ -93,9 +93,8 @@ TcpDctcp::ReduceCwnd (Ptr<TcpSocketState> tcb)
   // [RFC3168], the sender SHOULD update cwnd as follows:
   //   cwnd = cwnd * (1 - DCTCP.Alpha / 2)
 
-  uint32_t cWnd = (int) tcb->m_cWnd * (1 - tcb->m_alpha /2.0);
-  tcb->m_cWnd = cWnd;
-
+  uint32_t cWnd = (int) (tcb->m_cWnd * (1 - tcb->m_alpha/2.0));
+  tcb->m_cWnd = std::max (cWnd, 2 * tcb->m_segmentSize);
 
   /***************************************************/
 }
@@ -119,8 +118,11 @@ TcpDctcp::PktsAcked (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked, const Time
 
   //  3.  If the ECE flag is set, update the bytes marked:
   //         DCTCP.BytesMarked += BytesAcked
-  tcb->m_bytesMarked += bytesAcked;
 
+	if (tcb->m_ecnState == TcpSocketState::ECN_ECE_RCVD)
+	{
+  	tcb->m_bytesMarked += bytesAcked;
+	}
   //  4.  If the acknowledgment number is less than or equal to
   //      DCTCP.WindowEnd, stop processing.  Otherwise, the end of the
   //      observation window has been reached, so proceed to update the
@@ -129,7 +131,9 @@ TcpDctcp::PktsAcked (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked, const Time
 
     //  5.  Compute the congestion level for the current observation window:
     //         M = DCTCP.BytesMarked / DCTCP.BytesAcked
-    uint32_t m = tcb->m_bytesMarked / tcb->m_bytesAcked;
+
+		
+    double m = (tcb->m_bytesAcked > 0) ? tcb->m_bytesMarked / tcb->m_bytesAcked : 0.0;
 
     //  6.  Update the congestion estimate:
     //         DCTCP.Alpha = DCTCP.Alpha * (1 - g) + g * M
@@ -137,7 +141,7 @@ TcpDctcp::PktsAcked (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked, const Time
 
     //  7.  Determine the end of the next observation window:
     //         DCTCP.WindowEnd = SND.NXT
-    tcb->m_windowEnd = m_nextTxSequence;
+    tcb->m_windowEnd = tcb->m_nextTxSequence;
 
     //  8.  Reset the byte counters:
     //         DCTCP.BytesAcked = DCTCP.BytesMarked = 0
@@ -156,8 +160,9 @@ TcpDctcp::ProcessCE (Ptr<TcpSocketState> tcb, bool currentCE)
   //** DCTCP: Fill your code here
   
   // Set ECN_CE_RCVD if CE bit was set
-  tcb->m_ecnState = ECN_CE_RCVD;
 
+  tcb->m_ecnState = currentCE ? TcpSocketState::ECN_CE_RCVD : TcpSocketState::ECN_IDLE;
+//		tcb->m_ecnState = TcpSocketState::ECN_CE_RCVD;
   /***************************************************/
 }
 
