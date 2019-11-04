@@ -283,23 +283,13 @@ int main (int argc, char *argv[])
 	Simulator::Destroy ();
 
 	// Step 15
-	// QueueDisc::Stats st;
-
 	std::string mode = (dctcp ? "dctcp-" : "tcp-");
 	std::string filename = "Hw4/queue-" + mode + std::to_string(K) + "-" + std::to_string(g) + "-" + std::to_string(qLen) + ".txt";
 	qm->SaveQueueLen(filename);
 
 	// Step 14
-	// st = qd_2_3[i].Get(0)->GetStats();
-	// NS_LOG_UNCOND("Queue " << i << " stats:\n" << st);
 	NS_LOG_UNCOND("Avg Queue len " << qm->GetAvgQueueLen());
 	NS_LOG_UNCOND("The calculated flow throughput is " << fa->CalcThruPut() << " Mbps");
-	// NS_LOG_UNCOND("The calculated flow completion time is " << fa->GetAvgFCT() << " seconds");
-
-	// NS_LOG_UNCOND("Calculated per flow throughput");
-	// flowAnalyzer->getPerFlowThruPut();
-	// NS_LOG_UNCOND("Calculated per flow completion time");
-	// flowAnalyzer->getPerFlowCT();
 
 	delete fa;
 	delete qm;

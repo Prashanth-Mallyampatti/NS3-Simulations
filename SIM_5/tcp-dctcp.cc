@@ -94,7 +94,7 @@ TcpDctcp::ReduceCwnd (Ptr<TcpSocketState> tcb)
   //   cwnd = cwnd * (1 - DCTCP.Alpha / 2)
 
   uint32_t cWnd = (int) (tcb->m_cWnd * (1 - tcb->m_alpha/2.0));
-  tcb->m_cWnd = std::max (cWnd, 2 * tcb->m_segmentSize);
+  tcb->m_cWnd = cWnd;
 
   /***************************************************/
 }
@@ -108,7 +108,7 @@ TcpDctcp::PktsAcked (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked, const Time
   //** DCTCP: Fill your code here
 
   // 1.  Compute the bytes acknowledged (TCP Selective Acknowledgment
-  //      (SACK) options [RFC2018] are ignored for this computation):
+  //     (SACK) options [RFC2018] are ignored for this computation):
   //         BytesAcked = SEG.ACK - SND.UNA (Not sure how this will return bytes..using alt method below)
   uint32_t bytesAcked = segmentsAcked * tcb->m_segmentSize;
 
@@ -127,17 +127,18 @@ TcpDctcp::PktsAcked (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked, const Time
   //      DCTCP.WindowEnd, stop processing.  Otherwise, the end of the
   //      observation window has been reached, so proceed to update the
   //      congestion estimate as follows:
-  if (tcb->m_lastAckedSeq > tcb->m_nextTxSequence-1) {
+  if (tcb->m_windowEnd.GetValue() == 0)
+    tcb->m_windowEnd = tcb->m_nextTxSequence;
+
+  if (tcb->m_lastAckedSeq > tcb->m_windowEnd-1) {
 
     //  5.  Compute the congestion level for the current observation window:
     //         M = DCTCP.BytesMarked / DCTCP.BytesAcked
-
-		
-    double m = (tcb->m_bytesAcked > 0) ? tcb->m_bytesMarked / tcb->m_bytesAcked : 0.0;
+    double m = (tcb->m_bytesAcked > 0) ? ((double)tcb->m_bytesMarked / (double)tcb->m_bytesAcked) : 0.0;
 
     //  6.  Update the congestion estimate:
     //         DCTCP.Alpha = DCTCP.Alpha * (1 - g) + g * M
-    tcb->m_alpha = tcb->m_alpha * (1-m_g) + m_g * m;
+    tcb->m_alpha = tcb->m_alpha * (1.0-m_g) + m_g * m;
 
     //  7.  Determine the end of the next observation window:
     //         DCTCP.WindowEnd = SND.NXT
