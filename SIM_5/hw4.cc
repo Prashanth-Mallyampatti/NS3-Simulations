@@ -170,7 +170,7 @@ int main (int argc, char *argv[])
  	uint64_t dataRate = 100 * ONEMBPS;
 	uint32_t K = 20, qLen = 200;
 	double g = 0.0625;
-	bool dctcp = true;
+	bool dctcp = false;
 
     // Step 2
   	CommandLine cmd;
@@ -181,8 +181,6 @@ int main (int argc, char *argv[])
   	cmd.Parse (argc, argv);
 
   	Time::SetResolution (Time::NS);
-    // Config::SetDefault("ns3::Ipv4GlobalRouting::RandomEcmpRouting", BooleanValue(true));
-    // Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", UintegerValue(ecmpMode));
 
 
 	// Step 3
