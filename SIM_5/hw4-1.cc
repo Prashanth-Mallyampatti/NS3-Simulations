@@ -144,14 +144,11 @@ class QueueMonitor {
 		double GetAvgQueueLen() {
 			// If queue is not used at all, return 0
 			if (m_qLens.size() == 0) return (double)(0.0);
-			double sumLensTimeAvg;
-			for (uint32_t i=0; i < m_qLens.size(); i++) { 
+			double sumLensTimeAvg = 0.0;
+			for (uint32_t i=1; i < m_qLens.size(); i++) { 
     			double timeInterval;
-				if (i==0)
-					timeInterval = m_qTimes.at(0).GetSeconds() - m_startTime.GetSeconds();
-				else
-					timeInterval = m_qTimes.at(i).GetSeconds() - m_qTimes.at(i-1).GetSeconds();
-				sumLensTimeAvg += m_qLens.at(i) * timeInterval;
+				timeInterval = m_qTimes.at(i).GetSeconds() - m_qTimes.at(i-1).GetSeconds();
+				sumLensTimeAvg += m_qLens.at(i-1) * timeInterval;
 			}
 			return (double) (sumLensTimeAvg / (double) (m_qTimes.at(m_qTimes.size() -1).GetSeconds() - m_startTime.GetSeconds()));
 		}
@@ -169,9 +166,8 @@ class QueueMonitor {
 
 int main (int argc, char *argv[])
 {
-	uint32_t /*n=3, f=5,*/ delay = 4;//, maxBytes=100000;
+	uint32_t delay = 4;
  	uint64_t dataRate = 100 * ONEMBPS;
-	std::string queueSize = "100p";
 	uint32_t K = 20, qLen = 200;
 	double g = 0.0625;
 	bool dctcp = true;
@@ -208,9 +204,6 @@ int main (int argc, char *argv[])
 		Config::SetDefault("ns3::TcpDctcp::g", DoubleValue(g));
 	}
 
-  	//LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
-  	//LogComponentEnable ("OnOffApplication", LOG_LEVEL_INFO);
-
 	// Step 5
 	NodeContainer c;
 	c.Create (4);
@@ -223,12 +216,14 @@ int main (int argc, char *argv[])
 	InternetStackHelper stack;
 	stack.Install (c);
 	
-	PointToPointHelper pointToPoint;
+	PointToPointHelper pointToPoint, pointToPoint1;
 	pointToPoint.SetDeviceAttribute ("DataRate", DataRateValue(DataRate (dataRate)));
 	pointToPoint.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (delay)));
 	
 	// Step 6
-	pointToPoint.SetQueue ("ns3::DropTailQueue", "MaxSize", StringValue("1p"));
+	pointToPoint1.SetDeviceAttribute ("DataRate", DataRateValue(DataRate (dataRate)));
+	pointToPoint1.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (delay)));
+	pointToPoint1.SetQueue ("ns3::DropTailQueue", "MaxSize", StringValue("1p"));
 
 	// Step 7
 	TrafficControlHelper tch;
@@ -237,7 +232,7 @@ int main (int argc, char *argv[])
 	NetDeviceContainer device_AC, device_BC, device_CD;
 	device_AC = pointToPoint.Install (nodes_AC);
 	device_BC = pointToPoint.Install (nodes_BC);
-	device_CD = pointToPoint.Install (nodes_CD);
+	device_CD = pointToPoint1.Install (nodes_CD);
 	QueueDiscContainer queueDisc_CD = tch.Install(device_CD);
 
 	// Step 8
@@ -279,8 +274,9 @@ int main (int argc, char *argv[])
 	Ptr<PacketSink> sink = StaticCast<PacketSink> (sinkApps.Get(0));
 	sink->TraceConnectWithoutContext("Rx", MakeCallback(&FlowAnalyzer::RecvPkt, fa));
 
+	Simulator::Stop(Seconds(10.0));
 	Simulator::Run ();
-	Simulator::Destroy ();
+	Simulator::Destroy ();	
 
 	// Step 15
 	std::string mode = (dctcp ? "dctcp-" : "tcp-");
@@ -288,7 +284,7 @@ int main (int argc, char *argv[])
 	qm->SaveQueueLen(filename);
 
 	// Step 14
-	NS_LOG_UNCOND("Avg Queue len " << qm->GetAvgQueueLen());
+	NS_LOG_UNCOND("Avg Queue len C " << qm->GetAvgQueueLen());
 	NS_LOG_UNCOND("The calculated flow throughput is " << fa->CalcThruPut() << " Mbps");
 
 	delete fa;

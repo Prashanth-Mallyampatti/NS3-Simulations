@@ -93,7 +93,7 @@ TcpDctcp::ReduceCwnd (Ptr<TcpSocketState> tcb)
   // [RFC3168], the sender SHOULD update cwnd as follows:
   //   cwnd = cwnd * (1 - DCTCP.Alpha / 2)
 
-  uint32_t cWnd = (int) (tcb->m_cWnd * (1 - tcb->m_alpha/2.0));
+  uint32_t cWnd = (uint32_t) (tcb->m_cWnd * (1.0 - tcb->m_alpha/2.0));
   tcb->m_cWnd = cWnd;
 
   /***************************************************/
@@ -127,14 +127,15 @@ TcpDctcp::PktsAcked (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked, const Time
   //      DCTCP.WindowEnd, stop processing.  Otherwise, the end of the
   //      observation window has been reached, so proceed to update the
   //      congestion estimate as follows:
-  if (tcb->m_windowEnd.GetValue() == 0)
+  if (tcb->m_windowEnd.GetValue() == 0) {
     tcb->m_windowEnd = tcb->m_nextTxSequence;
+  }
+
 
   if (tcb->m_lastAckedSeq > tcb->m_windowEnd-1) {
-
     //  5.  Compute the congestion level for the current observation window:
     //         M = DCTCP.BytesMarked / DCTCP.BytesAcked
-    double m = (tcb->m_bytesAcked > 0) ? ((double)tcb->m_bytesMarked / (double)tcb->m_bytesAcked) : 0.0;
+    double m = (double) tcb->m_bytesMarked/tcb->m_bytesAcked;
 
     //  6.  Update the congestion estimate:
     //         DCTCP.Alpha = DCTCP.Alpha * (1 - g) + g * M
@@ -163,7 +164,7 @@ TcpDctcp::ProcessCE (Ptr<TcpSocketState> tcb, bool currentCE)
   // Set ECN_CE_RCVD if CE bit was set
 
   tcb->m_ecnState = currentCE ? TcpSocketState::ECN_CE_RCVD : TcpSocketState::ECN_IDLE;
-//		tcb->m_ecnState = TcpSocketState::ECN_CE_RCVD;
+
   /***************************************************/
 }
 
